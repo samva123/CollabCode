@@ -1,7 +1,7 @@
 # CollabCode 
 A real-time, browser-based collaborative code editor and compiler. This platform allows multiple users to write, edit, and compile code together seamlessly in a shared environment.
 
-## Key Features
+## Key Feature
 - Real-time Collaboration: Edit code simultaneously with other users. Changes are synchronized instantly.
 
 - Integrated Compiler: Compile and run code directly in the browser.
