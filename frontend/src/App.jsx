@@ -421,7 +421,7 @@ function App() {
     setIsRunning(true);
     setOutput("Running...");
     try {
-      const response = await fetch("http://localhost:5000/api/execute", {
+      const response = await fetch("http://localhost:8000/api/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ language, code, stdin: input }),
@@ -431,7 +431,7 @@ function App() {
       else if (res.stderr) setOutput(`Error:\n${res.stderr}`);
       else setOutput("No output received");
     } catch (err) {
-      setOutput(`Connection Error: ${err.message}\nMake sure your backend server is running on port 5000.`);
+      setOutput(`Connection Error: ${err.message}\nMake sure your backend server is running on port 8000.`);
     } finally {
       setIsRunning(false);
     }
