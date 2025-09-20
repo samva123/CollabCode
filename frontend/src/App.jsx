@@ -400,6 +400,7 @@
 import React, { useState } from "react";
 import Editor from "@monaco-editor/react";
 import { Sun, Moon, Play, Code, Terminal, Upload, Download, Copy, Check } from "lucide-react";
+import TestCases from "./TestCases.jsx";
 
 function App() {
   const [language, setLanguage] = useState("javascript");
@@ -414,14 +415,14 @@ function App() {
     { value: "javascript", label: "JavaScript", icon: "🟨" },
     { value: "python", label: "Python", icon: "🐍" },
     { value: "cpp", label: "C++", icon: "⚡" },
-    { value: "java", label: "Java", icon: "☕" }
+    { value: "java", label: "Java", icon: "☕" },
   ];
 
   const handleRun = async () => {
     setIsRunning(true);
     setOutput("Running...");
     try {
-      const response = await fetch("http://localhost:5000/api/execute", {
+      const response = await fetch("http://localhost:8000/api/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ language, code, stdin: input }),
@@ -431,7 +432,7 @@ function App() {
       else if (res.stderr) setOutput(`Error:\n${res.stderr}`);
       else setOutput("No output received");
     } catch (err) {
-      setOutput(`Connection Error: ${err.message}\nMake sure your backend server is running on port 5000.`);
+      setOutput(`Connection Error: ${err.message}\nMake sure your backend server is running on port 8000.`);
     } finally {
       setIsRunning(false);
     }
@@ -448,7 +449,8 @@ function App() {
   };
 
   const downloadCode = () => {
-    const extension = language === "cpp" ? "cpp" : language === "python" ? "py" : language === "java" ? "java" : "js";
+    const extension =
+      language === "cpp" ? "cpp" : language === "python" ? "py" : language === "java" ? "java" : "js";
     const blob = new Blob([code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -459,10 +461,10 @@ function App() {
   };
 
   const uploadFile = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".js,.py,.cpp,.java,.txt";
-    input.onchange = (e) => {
+    const inputEl = document.createElement("input");
+    inputEl.type = "file";
+    inputEl.accept = ".js,.py,.cpp,.java,.txt";
+    inputEl.onchange = (e) => {
       const file = e.target.files[0];
       if (file) {
         const reader = new FileReader();
@@ -470,7 +472,7 @@ function App() {
         reader.readAsText(file);
       }
     };
-    input.click();
+    inputEl.click();
   };
 
   const theme = {
@@ -484,7 +486,7 @@ function App() {
       inputBg: "bg-slate-50",
       outputBg: "bg-slate-900",
       outputText: "text-green-400",
-      shadow: "shadow-lg shadow-slate-200/50"
+      shadow: "shadow-lg shadow-slate-200/50",
     },
     dark: {
       bg: "bg-slate-900",
@@ -496,8 +498,8 @@ function App() {
       inputBg: "bg-slate-900",
       outputBg: "bg-black",
       outputText: "text-green-400",
-      shadow: "shadow-lg shadow-black/25"
-    }
+      shadow: "shadow-lg shadow-black/25",
+    },
   };
 
   const currentTheme = isDark ? theme.dark : theme.light;
@@ -583,55 +585,11 @@ function App() {
           </div>
         </div>
 
-        {/* Input/Output */}
+        {/* TestCases / Input/Output */}
         <div className={`w-96 flex flex-col ${currentTheme.cardBg} ${currentTheme.border} border-l`}>
-          <div className="flex-1 flex flex-col">
-            <div className={`px-4 py-2 ${currentTheme.border} border-b flex items-center space-x-2`}>
-              <Terminal className="w-4 h-4" />
-              <span className="text-sm font-medium">Input (stdin)</span>
-            </div>
-            <textarea
-              placeholder="Enter input for your program here..."
-              className={`flex-1 p-4 ${currentTheme.inputBg} text-sm outline-none resize-none font-mono`}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-            />
-          </div>
-
-          <div className="flex-1 flex flex-col">
-            <div className={`px-4 py-2 ${currentTheme.border} border-b flex items-center justify-between`}>
-              <div className="flex items-center space-x-2">
-                <Terminal className="w-4 h-4" />
-                <span className="text-sm font-medium">Output</span>
-                {isRunning && <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>}
-              </div>
-              {output && !isRunning && (
-                <button onClick={copyToClipboard} className="p-1 rounded hover:bg-slate-700" title="Copy output">
-                  {copied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                </button>
-              )}
-            </div>
-            <div className={`flex-1 p-4 ${currentTheme.outputBg} ${currentTheme.outputText} font-mono text-sm overflow-auto whitespace-pre-wrap`}>
-              {output || <span className="text-slate-500 italic">Program output will appear here...</span>}
-            </div>
-          </div>
+          <TestCases language={language} code={code} />
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className={`${currentTheme.headerBg} px-6 py-2 ${currentTheme.border} border-t flex items-center justify-between text-xs ${currentTheme.textSecondary}`}>
-        <div className="flex items-center space-x-4">
-          <span>Language: {languages.find((l) => l.value === language)?.label}</span>
-          <span>•</span>
-          <span>Characters: {code.length}</span>
-          <span>•</span>
-          <span>Lines: {code.split("\n").length}</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-          <span>Connected</span>
-        </div>
-      </footer>
     </div>
   );
 }
