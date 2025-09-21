@@ -381,63 +381,100 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
-import { Sun, Moon, Play, Code, Terminal, Upload, Download, Copy, Check } from "lucide-react";
-import TestCases from "./TestCases.jsx";
+import io from "socket.io-client";
+import axios from "axios";
+import {
+  Sun,
+  Moon,
+  Play,
+  Code,
+  Terminal,
+  Upload,
+  Download,
+  Copy,
+  Check,
+} from "lucide-react";
+
+const socket = io("http://localhost:8000");
 
 function App() {
   const [language, setLanguage] = useState("javascript");
-  const [code, setCode] = useState("// Write your code here\nconsole.log('Hello, World!');");
-  const [input, setInput] = useState("");
+  const [code, setCode] = useState("// Write your code here\n");
+  const [stdin, setStdin] = useState("");
   const [output, setOutput] = useState("");
-  const [isRunning, setIsRunning] = useState(false);
+  const [roomId, setRoomId] = useState("");
+  const [joined, setJoined] = useState(false);
+  const [usersCount, setUsersCount] = useState(1);
   const [isDark, setIsDark] = useState(true);
+  const [isRunning, setIsRunning] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const languages = [
-    { value: "javascript", label: "JavaScript", icon: "🟨" },
-    { value: "python", label: "Python", icon: "🐍" },
-    { value: "cpp", label: "C++", icon: "⚡" },
-    { value: "java", label: "Java", icon: "☕" },
-  ];
+  // ✅ new state for name
+  const [name, setName] = useState("");
+  const [messages, setMessages] = useState([]);
 
-  const handleRun = async () => {
+  // ---- Socket listeners ----
+  useEffect(() => {
+    socket.on("code-update", (newCode) => setCode(newCode));
+    socket.on("language-update", (newLang) => setLanguage(newLang));
+    socket.on("room-users", (count) => setUsersCount(count));
+
+    // ✅ listen for join/leave messages
+    socket.on("user-joined", (userName) => {
+      setMessages((prev) => [...prev, `${userName} joined`]);
+    });
+    socket.on("user-left", (userName) => {
+      setMessages((prev) => [...prev, `${userName} left`]);
+    });
+
+    return () => {
+      socket.off("code-update");
+      socket.off("language-update");
+      socket.off("room-users");
+      socket.off("user-joined");
+      socket.off("user-left");
+    };
+  }, []);
+
+  // ---- Handle code changes ----
+  const handleCodeChange = (newCode) => {
+    setCode(newCode);
+    if (joined) {
+      socket.emit("code-change", { roomId, code: newCode });
+    }
+  };
+
+  // ---- Handle language change ----
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setLanguage(newLang);
+    if (joined) {
+      socket.emit("language-change", { roomId, language: newLang });
+    }
+  };
+
+  // ---- Run Code ----
+  const runCode = async () => {
     setIsRunning(true);
     setOutput("Running...");
+
     try {
-      const response = await fetch("http://localhost:8000/api/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language, code, stdin: input }),
+      const res = await axios.post("http://localhost:8000/api/execute", {
+        language,
+        code,
+        stdin,
       });
-      const res = await response.json();
-      if (res.stdout) setOutput(res.stdout);
-      else if (res.stderr) setOutput(`Error:\n${res.stderr}`);
-      else setOutput("No output received");
+      setOutput(res.data.stdout || res.data.stderr || "No output");
     } catch (err) {
-      setOutput(`Connection Error: ${err.message}\nMake sure your backend server is running on port 8000.`);
+      setOutput(`Error: ${err.message}`);
     } finally {
       setIsRunning(false);
     }
   };
 
+  // ---- Copy output ----
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(output);
@@ -448,9 +485,16 @@ function App() {
     }
   };
 
+  // ---- File download ----
   const downloadCode = () => {
     const extension =
-      language === "cpp" ? "cpp" : language === "python" ? "py" : language === "java" ? "java" : "js";
+      language === "cpp"
+        ? "cpp"
+        : language === "python"
+        ? "py"
+        : language === "java"
+        ? "java"
+        : "js";
     const blob = new Blob([code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -460,11 +504,12 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  // ---- File upload ----
   const uploadFile = () => {
-    const inputEl = document.createElement("input");
-    inputEl.type = "file";
-    inputEl.accept = ".js,.py,.cpp,.java,.txt";
-    inputEl.onchange = (e) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".js,.py,.cpp,.java,.txt";
+    input.onchange = (e) => {
       const file = e.target.files[0];
       if (file) {
         const reader = new FileReader();
@@ -472,9 +517,17 @@ function App() {
         reader.readAsText(file);
       }
     };
-    inputEl.click();
+    input.click();
   };
 
+  // ---- Join Room ----
+  const joinRoom = () => {
+    if (roomId.trim() === "" || name.trim() === "") return;
+    socket.emit("join-room", { roomId, name }); // ✅ send name also
+    setJoined(true);
+  };
+
+  // ---- Theme config ----
   const theme = {
     light: {
       bg: "bg-slate-50",
@@ -501,97 +554,204 @@ function App() {
       shadow: "shadow-lg shadow-black/25",
     },
   };
-
   const currentTheme = isDark ? theme.dark : theme.light;
 
   return (
-    <div className={`h-screen w-screen flex flex-col ${currentTheme.bg} ${currentTheme.text} transition-colors duration-300`}>
-      {/* Header */}
-      <header className={`${currentTheme.headerBg} ${currentTheme.border} border-b backdrop-blur-sm ${currentTheme.shadow}`}>
-        <div className="px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <Code className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">CollabCode</h1>
-              <p className={`text-xs ${currentTheme.textSecondary}`}>Real-time collaborative editor</p>
-            </div>
+    <div
+      className={`h-screen w-screen flex flex-col ${currentTheme.bg} ${currentTheme.text}`}
+    >
+      {/* ---- Header ---- */}
+      <header
+        className={`${currentTheme.headerBg} ${currentTheme.border} border-b px-6 py-3 flex justify-between items-center`}
+      >
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <Code className="w-5 h-5 text-white" />
           </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <label className={`text-sm font-medium ${currentTheme.textSecondary}`}>Language:</label>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className={`px-3 py-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              >
-                {languages.map((lang) => (
-                  <option key={lang.value} value={lang.value}>
-                    {lang.icon} {lang.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <button onClick={uploadFile} className={`p-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border hover:bg-slate-700`} title="Upload file">
-                <Upload className="w-4 h-4" />
-              </button>
-              <button onClick={downloadCode} className={`p-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border hover:bg-slate-700`} title="Download code">
-                <Download className="w-4 h-4" />
-              </button>
-              <button onClick={() => setIsDark(!isDark)} className={`p-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border hover:bg-slate-700`} title="Toggle theme">
-                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={handleRun}
-                disabled={isRunning}
-                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:from-gray-500 disabled:to-gray-600 text-white px-6 py-2 rounded-lg font-semibold flex items-center space-x-2"
-              >
-                <Play className="w-4 h-4" />
-                <span>{isRunning ? "Running..." : "Run Code"}</span>
-              </button>
-            </div>
+          <div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              CollabCode
+            </h1>
+            <p className={`text-xs ${currentTheme.textSecondary}`}>
+              Real-time collaborative editor
+            </p>
           </div>
+        </div>
+
+        {/* Room Controls */}
+        <div className="flex items-center space-x-3">
+          {/* ✅ Name input */}
+          {!joined && (
+            <input
+              type="text"
+              placeholder="Enter your Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={`px-3 py-2 rounded-lg text-sm ${currentTheme.inputBg} ${currentTheme.border} border`}
+            />
+          )}
+          <input
+            type="text"
+            placeholder="Enter Room ID"
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+            disabled={joined}
+            className={`px-3 py-2 rounded-lg text-sm ${currentTheme.inputBg} ${currentTheme.border} border`}
+          />
+          <button
+            onClick={joinRoom}
+            disabled={joined}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+          >
+            {joined ? "Joined" : "Join"}
+          </button>
+          {joined && (
+            <span className={`text-sm ${currentTheme.textSecondary}`}>
+              Users: {usersCount}
+            </span>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center space-x-2">
+          {/* Language Dropdown */}
+          <select
+            value={language}
+            onChange={handleLanguageChange}
+            className={`px-2 py-1 rounded-lg text-sm ${currentTheme.inputBg} ${currentTheme.border} border`}
+          >
+            <option value="javascript">JavaScript</option>
+            <option value="python">Python</option>
+            <option value="cpp">C++</option>
+            <option value="java">Java</option>
+          </select>
+
+          <button
+            onClick={uploadFile}
+            className={`p-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border`}
+            title="Upload file"
+          >
+            <Upload className="w-4 h-4" />
+          </button>
+          <button
+            onClick={downloadCode}
+            className={`p-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border`}
+            title="Download code"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setIsDark(!isDark)}
+            className={`p-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border`}
+            title="Toggle theme"
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+          <button
+            onClick={runCode}
+            disabled={isRunning}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm"
+          >
+            <Play className="w-4 h-4 inline mr-2" />
+            {isRunning ? "Running..." : "Run"}
+          </button>
         </div>
       </header>
 
-      {/* Main */}
+      {/* ---- Main Area ---- */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Editor */}
+        {/* Code Editor */}
         <div className="flex-1 flex flex-col">
-          <div className={`${currentTheme.headerBg} px-4 py-2 ${currentTheme.border} border-b flex items-center space-x-2`}>
-            <Code className="w-4 h-4" />
-            <span className="text-sm font-medium">Editor</span>
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Live collaboration"></div>
-          </div>
+          <Editor
+            height="100%"
+            theme={isDark ? "vs-dark" : "light"}
+            language={language}
+            value={code}
+            onChange={handleCodeChange}
+            options={{
+              fontSize: 14,
+              minimap: { enabled: false },
+            }}
+          />
+        </div>
 
-          <div className="flex-1 relative m-4 border-2 border-dashed rounded-lg overflow-hidden">
-            <Editor
-              height="100%"
-              language={language === "cpp" ? "cpp" : language}
-              value={code}
-              theme={isDark ? "vs-dark" : "light"}
-              onChange={(val) => setCode(val || "")}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-              }}
+        {/* Input / Output */}
+        <div
+          className={`w-96 flex flex-col ${currentTheme.cardBg} ${currentTheme.border} border-l`}
+        >
+          {/* Input */}
+          <div className="flex-1 flex flex-col">
+            <div
+              className={`px-4 py-2 ${currentTheme.border} border-b flex items-center space-x-2`}
+            >
+              <Terminal className="w-4 h-4" />
+              <span className="text-sm font-medium">Input (stdin)</span>
+            </div>
+            <textarea
+              value={stdin}
+              onChange={(e) => setStdin(e.target.value)}
+              placeholder="Enter input here..."
+              className={`flex-1 p-3 ${currentTheme.inputBg} text-sm font-mono outline-none resize-none`}
             />
           </div>
-        </div>
 
-        {/* TestCases / Input/Output */}
-        <div className={`w-96 flex flex-col ${currentTheme.cardBg} ${currentTheme.border} border-l`}>
-          <TestCases language={language} code={code} />
+          {/* Output */}
+          <div className="flex-1 flex flex-col">
+            <div
+              className={`px-4 py-2 ${currentTheme.border} border-b flex justify-between items-center`}
+            >
+              <div className="flex items-center space-x-2">
+                <Terminal className="w-4 h-4" />
+                <span className="text-sm font-medium">Output</span>
+              </div>
+              {output && !isRunning && (
+                <button
+                  onClick={copyToClipboard}
+                  className="p-1 rounded hover:bg-slate-700"
+                  title="Copy output"
+                >
+                  {copied ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                </button>
+              )}
+            </div>
+            <div
+              className={`flex-1 p-3 font-mono text-sm overflow-auto whitespace-pre-wrap ${currentTheme.outputBg} ${currentTheme.outputText}`}
+            >
+              {output || (
+                <span className="text-slate-500 italic">
+                  Program output will appear here...
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* ✅ Show join/leave messages */}
+      {joined && (
+        <div className="px-6 py-2 text-sm border-t">
+          {messages.map((m, i) => (
+            <div key={i}>{m}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+
