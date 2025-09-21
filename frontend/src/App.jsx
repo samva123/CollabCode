@@ -461,14 +461,21 @@ function App() {
     setOutput("Running...");
 
     try {
+
       const res = await axios.post("http://localhost:8000/api/execute", {
         language,
         code,
         stdin,
+
+      
+
       });
       setOutput(res.data.stdout || res.data.stderr || "No output");
     } catch (err) {
       setOutput(`Error: ${err.message}`);
+
+
+
     } finally {
       setIsRunning(false);
     }
