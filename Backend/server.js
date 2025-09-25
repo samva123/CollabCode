@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
+// const bodyParser = require("body-parser");
 const axios = require("axios");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -12,7 +12,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 // ----------------- Middleware -----------------
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
 // ----------------- Judge0 Setup -----------------
 const JUDGE0_URL = "https://judge0-ce.p.rapidapi.com/submissions";
