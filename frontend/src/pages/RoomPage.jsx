@@ -15,7 +15,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const socket = io("http://localhost:8000");
+const socket = io(import.meta.env.VITE_BACKEND_URL);
+
 
 function RoomPage({ roomId: initialRoomId, name: initialName, isDark: initialDark, setIsDark }) {
   // ------------------ STATES ------------------

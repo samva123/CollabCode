@@ -105,21 +105,40 @@ app.post("/api/execute", async (req, res) => {
 
 // ----------------- Socket.IO: Collaboration -----------------
 const rooms = {}; // roomId -> { socketId -> username }
+const roomCode = {}; // roomId -> latest code
+const roomLanguage = {}; // roomId -> latest language
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  socket.on("join-room", ({ roomId, name }) => {
-    if (!rooms[roomId]) rooms[roomId] = {};
-    rooms[roomId][socket.id] = name || `Guest-${socket.id.slice(0, 5)}`;
-    socket.join(roomId);
+socket.on("join-room", ({ roomId, name }) => {
+  if (!rooms[roomId]) rooms[roomId] = {};
+  rooms[roomId][socket.id] = name || `Guest-${socket.id.slice(0, 5)}`;
+  socket.join(roomId);
 
-    // Emit updated users list to all clients in room
-    io.to(roomId).emit("room-users", Object.values(rooms[roomId]));
-  });
+  // Send existing code and language to new user
+  if (roomCode[roomId]) {
+    socket.emit("code-update", roomCode[roomId]);
+  }
+  if (roomLanguage[roomId]) {
+    socket.emit("language-update", roomLanguage[roomId]);
+  }
 
-  socket.on("code-change", ({ roomId, code }) => socket.to(roomId).emit("code-update", code));
-  socket.on("language-change", ({ roomId, language }) => socket.to(roomId).emit("language-update", language));
+  // Emit updated users list to all clients in room
+  io.to(roomId).emit("room-users", Object.values(rooms[roomId]));
+});
+
+
+socket.on("code-change", ({ roomId, code }) => {
+  roomCode[roomId] = code; // store latest code
+  socket.to(roomId).emit("code-update", code);
+});
+
+socket.on("language-change", ({ roomId, language }) => {
+  roomLanguage[roomId] = language; // store latest language
+  socket.to(roomId).emit("language-update", language);
+});
+
 
   socket.on("disconnect", () => {
     for (const roomId in rooms) {
