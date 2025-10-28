@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation , useParams } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import io from "socket.io-client";
 import axios from "axios";
@@ -18,14 +19,19 @@ import {
 const socket = io(import.meta.env.VITE_BACKEND_URL);
 
 
-function RoomPage({ roomId: initialRoomId, name: initialName, isDark: initialDark, setIsDark }) {
+function RoomPage({  isDark , setIsDark }) {
   // ------------------ STATES ------------------
   const [language, setLanguage] = useState("javascript");
   const [code, setCode] = useState("// Write your code here\n");
   const [stdin, setStdin] = useState("");
   const [output, setOutput] = useState("");
-  const [roomId, setRoomId] = useState(initialRoomId || "");
-  const [name, setName] = useState(initialName || "");
+  const location = useLocation();
+  const { roomId: paramRoomId } = useParams();          // gets roomId from URL
+  const { name: stateName } = location.state || {};     // gets name from navigate state
+
+  const [roomId, setRoomId] = useState(paramRoomId || "");
+  const [name, setName] = useState(stateName || "");
+
   const [joined, setJoined] = useState(false);
   const [usersCount, setUsersCount] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -78,17 +84,25 @@ function RoomPage({ roomId: initialRoomId, name: initialName, isDark: initialDar
     };
   }, []);
 
-  // If an entry page provided name and roomId, auto-join on mount
+  // // If an entry page provided name and roomId, auto-join on mount
+  // useEffect(() => {
+  //   if (!joined && initialRoomId && initialName) {
+  //     socket.emit("join-room", { roomId: initialRoomId, name: initialName });
+  //     setJoined(true);
+  //     // ensure local state mirrors props
+  //     setRoomId(initialRoomId);
+  //     setName(initialName);
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [initialRoomId, initialName]);
+
   useEffect(() => {
-    if (!joined && initialRoomId && initialName) {
-      socket.emit("join-room", { roomId: initialRoomId, name: initialName });
-      setJoined(true);
-      // ensure local state mirrors props
-      setRoomId(initialRoomId);
-      setName(initialName);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialRoomId, initialName]);
+  if (!joined && roomId && name) {
+    socket.emit("join-room", { roomId, name });
+    setJoined(true);
+  }
+}, [roomId, name, joined]);
+
 
   // ------------------ ERROR HANDLING ------------------
   const parseErrorLine = (errorText, language) => {
@@ -294,7 +308,9 @@ function RoomPage({ roomId: initialRoomId, name: initialName, isDark: initialDar
       outputBg: "bg-black", outputText: "text-green-400",
     },
   };
-  const currentTheme = initialDark ? theme.dark : theme.light;
+  //const currentTheme = initialDark ? theme.dark : theme.light;
+  const currentTheme = isDark ? theme.dark : theme.light;
+
 
   const getColor = (name) => {
     // deterministic simple color selection
@@ -370,8 +386,8 @@ function RoomPage({ roomId: initialRoomId, name: initialName, isDark: initialDar
           <button onClick={downloadCode} className={`p-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border`} title="Download code">
             <Download className="w-4 h-4" />
           </button>
-          <button onClick={() => setIsDark(!initialDark)} className={`p-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border`} title="Toggle theme">
-            {initialDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          <button onClick={() => setIsDark(!isDark)} className={`p-2 rounded-lg ${currentTheme.inputBg} ${currentTheme.border} border`} title="Toggle theme">
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           <button onClick={runCode} disabled={isRunning} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm">
@@ -386,7 +402,7 @@ function RoomPage({ roomId: initialRoomId, name: initialName, isDark: initialDar
         <div className="flex-1 flex flex-col">
           <Editor
             height="100%"
-            theme={initialDark ? "vs-dark" : "light"}
+            theme={isDark ? "vs-dark" : "light"}
             language={language}
             value={code}
             onChange={handleCodeChange}
