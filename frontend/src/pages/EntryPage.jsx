@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { Code, Sun, Moon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-function EntryPage({ onJoin }) {
+//function EntryPage({ onJoin }) {
+function EntryPage({ isDark, setIsDark }) {
+
   const [name, setName] = useState("");
   const [roomId, setRoomId] = useState("");
-  const [isDark, setIsDark] = useState(true);
+  //const [isDark, setIsDark] = useState(true);
+  const navigate = useNavigate();
 
   const theme = {
     light: {
@@ -27,10 +31,15 @@ function EntryPage({ onJoin }) {
 
   const currentTheme = isDark ? theme.dark : theme.light;
 
-  const handleJoin = () => {
-    if (name.trim() && roomId.trim()) {
-      onJoin({ name, roomId });
-    }
+  // const handleJoin = () => {
+  //   if (name.trim() && roomId.trim()) {
+  //     onJoin({ name, roomId });
+  //   }
+  // };
+   const handleJoin = () => {
+    if (!name.trim()) return alert("Enter your name");
+    const id = roomId.trim() || Math.random().toString(36).substring(2, 8);
+    navigate(`/room/${id}`, { state: { name } });
   };
 
   return (
