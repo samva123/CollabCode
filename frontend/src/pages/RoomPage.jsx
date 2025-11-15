@@ -217,23 +217,39 @@ function RoomPage({  isDark , setIsDark }) {
   };
 
   // ------------------ FILE HANDLING ------------------
-  const uploadFile = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".js,.py,.cpp,.java,.txt";
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          setCode(reader.result);
-          clearErrorDecorations();
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
+const uploadFile = () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".js,.py,.cpp,.java,.txt";
+
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const uploaded = reader.result;
+
+        // update local editor
+        setCode(uploaded);
+        clearErrorDecorations();
+
+        // broadcast to room
+        if (joined) {
+          socket.emit("code-change", {
+            roomId,
+            code: uploaded,
+          });
+        }
+      };
+
+      reader.readAsText(file);
+    }
   };
+
+  input.click();
+};
+
 
   const downloadCode = () => {
     const extension = language === "cpp" ? "cpp" : language === "python" ? "py" : language === "java" ? "java" : "js";
