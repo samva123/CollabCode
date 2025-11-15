@@ -42,9 +42,11 @@ function RoomPage({  isDark , setIsDark }) {
   const [roomUsers, setRoomUsers] = useState([]); // array of user names
 
 
+
   const [showAIWindow, setShowAIWindow] = useState(false);
   const [aiData, setAiData] = useState(null);
   const [evaluation, setEvaluation] = useState(null);
+
 
 
   const editorRef = useRef(null);
@@ -108,6 +110,7 @@ function RoomPage({  isDark , setIsDark }) {
     setJoined(true);
   }
 }, [roomId, name, joined]);
+
 
 
 useEffect(() => {
@@ -191,6 +194,7 @@ const evaluateWithAI = async () => {
     setOutput("AI Error: " + err.message);
   }
 };
+
 
 
 
@@ -307,23 +311,41 @@ const evaluateWithAI = async () => {
   };
 
   // ------------------ FILE HANDLING ------------------
-  const uploadFile = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".js,.py,.cpp,.java,.txt";
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          setCode(reader.result);
-          clearErrorDecorations();
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
+
+const uploadFile = () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".js,.py,.cpp,.java,.txt";
+
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const uploaded = reader.result;
+
+        // update local editor
+        setCode(uploaded);
+        clearErrorDecorations();
+
+        // broadcast to room
+        if (joined) {
+          socket.emit("code-change", {
+            roomId,
+            code: uploaded,
+          });
+        }
+      };
+
+      reader.readAsText(file);
+    }
   };
+
+  input.click();
+};
+
+
 
   const downloadCode = () => {
     const extension = language === "cpp" ? "cpp" : language === "python" ? "py" : language === "java" ? "java" : "js";
@@ -486,6 +508,7 @@ const evaluateWithAI = async () => {
           </button>
 
 
+
           {/* ⭐ AI Evaluate Button */}
           <button
             onClick={evaluateWithAI}
@@ -493,6 +516,7 @@ const evaluateWithAI = async () => {
           >
             AI Evaluate
           </button>
+
         </div>
       </header>
 
@@ -559,6 +583,7 @@ const evaluateWithAI = async () => {
         </div>
       )}
 
+
 {showAIWindow && (
         <div
           className="fixed top-20 left-20 bg-slate-900 text-white border border-slate-500 rounded-lg shadow-2xl z-50"
@@ -589,6 +614,7 @@ const evaluateWithAI = async () => {
           </div>
         </div>
       )}
+
     </div>
   );
 }
