@@ -200,6 +200,10 @@ socket.on("language-change", ({ roomId, language }) => {
   });
 });
 
+app.get("/" ,(req,res)=>{
+  console.log("hello ji");
+})
+
 // ----------------- Start Server -----------------
 const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
