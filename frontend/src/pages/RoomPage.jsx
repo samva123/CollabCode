@@ -159,7 +159,7 @@ const evaluateWithAI = async () => {
   setOutput("AI evaluating...");
 
   try {
-    const res = await axios.post("http://localhost:8000/api/evaluate", {
+    const res = await axios.post("https://collabcode-rwpr.onrender.com/api/evaluate", {
       language,
       code,
       problem: problemDescription
@@ -172,7 +172,7 @@ const evaluateWithAI = async () => {
     let results = [];
 
     for (let tc of ai.test_cases) {
-      const r = await axios.post("http://localhost:8000/api/execute", {
+      const r = await axios.post("https://collabcode-rwpr.onrender.com/api/execute", {
         language,
         code,
         stdin: tc.input
@@ -365,7 +365,7 @@ const uploadFile = () => {
     clearErrorDecorations();
 
     try {
-      const res = await axios.post("http://localhost:8000/api/execute", { language, code, stdin });
+      const res = await axios.post("https://collabcode-rwpr.onrender.com/api/execute", { language, code, stdin });
       const outputText = res.data.stdout || res.data.stderr || "No output";
       setOutput(outputText);
 
