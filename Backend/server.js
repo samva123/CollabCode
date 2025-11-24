@@ -200,8 +200,8 @@ socket.on("language-change", ({ roomId, language }) => {
   });
 });
 
-app.get("/" ,(req,res)=>{
-  console.log("hello ji");
+app.get("/" , async (req,res)=>{
+  res.send("server is running");
 })
 
 // ----------------- Start Server -----------------
