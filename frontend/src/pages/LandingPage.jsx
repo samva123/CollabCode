@@ -64,7 +64,7 @@ export default function LandingPage() {
 
       const googleToken = response.credential;
 
-      const result = await fetch("http://localhost:8000/auth/google", {
+      const result = await fetch("https://collabcode-ctmq.onrender.com/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: googleToken }),

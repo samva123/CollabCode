@@ -161,7 +161,7 @@ const evaluateWithAI = async () => {
   const problemDescription = "Analyze the code and infer the problem automatically.";
   setOutput("AI evaluating...");
   try {
-    const res = await axios.post("http://localhost:8000/api/evaluate", {
+    const res = await axios.post("https://collabcode-ctmq.onrender.com/api/evaluate", {
       language,
       code,
       problem: problemDescription
@@ -432,7 +432,7 @@ const uploadFile = () => {
     clearErrorDecorations();
 
     try {
-      const res = await axios.post("http://localhost:8000/api/execute", { language, code, stdin });
+      const res = await axios.post("https://collabcode-ctmq.onrender.com/api/execute", { language, code, stdin });
       const outputText = res.data.stdout || res.data.stderr || "No output";
       setOutput(outputText);
 
