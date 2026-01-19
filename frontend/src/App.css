@@ -34,7 +34,7 @@ body {
 /* Header Styles */
 .header {
   flex-shrink: 0;
-  padding: 12px 24px;
+  padding: 2px 12px;
   border-bottom: 1px solid;
   transition: all 0.3s ease;
 }
@@ -55,6 +55,7 @@ body {
   align-items: center;
   max-width: 1400px;
   margin: 0 auto;
+  padding: 4px 0;
 }
 
 /* Brand Styles */
@@ -610,3 +611,150 @@ body {
     font-size: 12px;
   }
 } 
+
+
+/* ------------------------------
+   AI Window - Markdown Wrapper
+------------------------------ */
+.ai-window-content .prose {
+  max-width: none;
+  font-size: 14px;
+  line-height: 1.55;
+  color: inherit;
+}
+
+/* ------------------------------
+   Section Box Styling
+------------------------------ */
+.ai-section {
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  border-left: 4px solid #3b82f6;
+  border-radius: 8px;
+  background-color: rgba(56, 139, 253, 0.08);
+}
+
+/* Dark Mode Variants */
+.dark-theme .ai-section {
+  background-color: rgba(56, 139, 253, 0.12);
+  border-left-color: #58a6ff;
+}
+
+/* Light Mode Variants */
+.light-theme .ai-section {
+  background-color: rgba(56, 139, 253, 0.07);
+  border-left-color: #3b82f6;
+}
+
+/* ------------------------------
+   Headings Inside Markdown
+------------------------------ */
+.ai-window-content .prose h2,
+.ai-window-content .prose h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #58a6ff;
+}
+
+.light-theme .ai-window-content .prose h2,
+.light-theme .ai-window-content .prose h3 {
+  color: #2563eb; /* Blue-600 */
+}
+
+/* ------------------------------
+   Text, Lists, Paragraphs
+------------------------------ */
+.ai-window-content .prose p,
+.ai-window-content .prose li {
+  margin: 4px 0;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+/* Bullet Lists */
+.ai-window-content .prose ul {
+  margin-left: 18px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+/* ------------------------------
+   Bold Highlight
+------------------------------ */
+.ai-window-content .prose strong {
+  color: #facc15; /* Gold */
+}
+
+/* ------------------------------
+   Inline Code Styling
+------------------------------ */
+.ai-window-content .prose code {
+  background-color: rgba(240, 246, 252, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.light-theme .ai-window-content .prose code {
+  background-color: #f0f2f5;
+  color: #1f2937;
+}
+
+/* ------------------------------
+   Scrollbar
+------------------------------ */
+.ai-window-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark-theme .ai-window-content::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 4px;
+}
+
+.light-theme .ai-window-content::-webkit-scrollbar-thumb {
+  background: #d0d7de;
+  border-radius: 4px;
+}
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes scroll-reverse {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.animate-scroll {
+  animation: scroll 25s linear infinite;
+}
+
+.animate-scroll-reverse {
+  animation: scroll-reverse 25s linear infinite;
+}
+
+/* Pause on hover */
+.animate-scroll:hover,
+.animate-scroll-reverse:hover {
+  animation-play-state: paused;
+}
+
+
+.page-transition {
+  animation: fadeSlide 0.5s ease forwards;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

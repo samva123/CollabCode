@@ -84,6 +84,7 @@ import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import EntryPage from "./pages/EntryPage.jsx";
 import RoomPage from "./pages/RoomPage.jsx";
+import LandingPage from "./pages/LandingPage.jsx";
 
 function App() {
   const [isDark, setIsDark] = useState(true);
@@ -91,7 +92,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<EntryPage isDark={isDark} setIsDark={setIsDark} />} />
+        <Route path="/" element={<LandingPage isDark={isDark} setIsDark={setIsDark} />} />
+        <Route path="/entrypage" element={<EntryPage isDark={isDark} setIsDark={setIsDark} />} />
         <Route path="/room/:roomId" element={<RoomPage isDark={isDark} setIsDark={setIsDark} />} />
       </Routes>
     </Router>

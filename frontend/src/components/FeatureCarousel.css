@@ -1,0 +1,99 @@
+/* wrapper */
+.fc-wrapper {
+  width: 100%;
+  overflow: hidden;
+  padding: 12px 0;
+  box-sizing: border-box;
+}
+
+/* track: duplicated items in one long row */
+.fc-track {
+  display: flex;
+  gap: 18px;
+  align-items: stretch;
+  width: max-content;
+  /* animation moves the whole track left by 50% (because items duplicated) */
+  animation: fc-scroll var(--scroll-duration, 20s) linear infinite;
+  will-change: transform;
+}
+
+/* pause animation if hovered anywhere on the track */
+.fc-track:hover,
+.fc-track:focus-within { /* keyboard accessibility */
+  animation-play-state: paused;
+}
+
+/* individual card */
+.fc-card {
+  min-width: 340px;           /* card width */
+  max-width: 380px;
+  padding: 28px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.04);
+  backdrop-filter: blur(6px);
+  color: #e6eef8;
+  transition: transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms;
+  transform-origin: center center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: default;
+}
+
+/* hover/keyboard-focused card: pause (via class) + scale */
+.fc-card:hover,
+.fc-card:focus,
+.fc-card.fc-paused {
+  transform: scale(1.08);
+  border-color: rgba(157, 132, 255, 0.6);
+  box-shadow:
+    0 0 18px rgba(138, 90, 255, 0.45),
+    0 0 32px rgba(88, 60, 255, 0.25),
+    0 0 48px rgba(88, 60, 255, 0.1);
+  z-index: 2;
+}
+
+/* icon block */
+.fc-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.12));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+/* title & description */
+.fc-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #fff;
+}
+.fc-desc {
+  color: #9fb0d1;
+  font-size: 0.92rem;
+  line-height: 1.3;
+}
+
+/* animation definitions */
+/* the translation amount is 50% of the track width because we duplicated the items */
+@keyframes fc-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-50%)); }
+}
+
+/* reverse animation variant (controlled by JS: animationDirection: 'reverse') uses same keyframes */
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .fc-card { min-width: 220px; max-width: 260px; }
+  .fc-track { gap: 12px; }
+}
+@media (max-width: 480px) {
+  .fc-card { min-width: 180px; max-width: 220px; padding: 14px; }
+  .fc-icon { width: 40px; height: 40px; font-size: 18px; }
+}
