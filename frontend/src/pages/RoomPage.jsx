@@ -185,6 +185,7 @@ const evaluateWithAI = async () => {
   //     problem: problemDescription
   //   });
   try {
+    console.log("Sending data:", { language, code, problemDescription });
     const res = await axios.post(`${BASE_URL}/api/evaluate`, {
       language,
       code,
