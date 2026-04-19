@@ -14,10 +14,12 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: [
-      "http://localhost:3000",
       "http://localhost:5173",
-      "https://collab-code-xi.vercel.app"
-    ]
+      "https://collab-code-xi.vercel.app",
+      "https://collab-code-6lkdl6x5c-varuns-projects-69d5d0e0.vercel.app"
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
