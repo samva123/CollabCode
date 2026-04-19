@@ -16,7 +16,7 @@ const io = new Server(server, {
     origin: [
       "http://localhost:3000",
       "http://localhost:5173",
-      "https://collab-code-virid.vercel.app"
+      "https://collab-code-xi.vercel.app"
     ]
   }
 });
