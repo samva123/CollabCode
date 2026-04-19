@@ -230,22 +230,39 @@ const roomLanguage = {}; // roomId -> latest language
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-socket.on("join-room", ({ roomId, name }) => {
+// socket.on("join-room", ({ roomId, name }) => {
+//   if (!rooms[roomId]) rooms[roomId] = {};
+//   rooms[roomId][socket.id] = name || `Guest-${socket.id.slice(0, 5)}`;
+//   socket.join(roomId);
+
+//   // Send existing code and language to new user
+//   if (roomCode[roomId]) {
+//     socket.emit("code-update", roomCode[roomId]);
+//   }
+//   if (roomLanguage[roomId]) {
+//     socket.emit("language-update", roomLanguage[roomId]);
+//   }
+
+//   // Emit updated users list to all clients in room
+//   io.to(roomId).emit("room-users", Object.values(rooms[roomId]));
+// });
+
+socket.on("join-room", ({ roomId, name, userId }) => {
   if (!rooms[roomId]) rooms[roomId] = {};
-  rooms[roomId][socket.id] = name || `Guest-${socket.id.slice(0, 5)}`;
+
+  if (!rooms[roomId][userId]) {
+    rooms[roomId][userId] = { name, sockets: new Set() };
+  }
+
+  rooms[roomId][userId].sockets.add(socket.id);
   socket.join(roomId);
 
-  // Send existing code and language to new user
-  if (roomCode[roomId]) {
-    socket.emit("code-update", roomCode[roomId]);
-  }
-  if (roomLanguage[roomId]) {
-    socket.emit("language-update", roomLanguage[roomId]);
-  }
-
-  // Emit updated users list to all clients in room
-  io.to(roomId).emit("room-users", Object.values(rooms[roomId]));
+  io.to(roomId).emit(
+    "room-users",
+    Object.values(rooms[roomId]).map(u => u.name)
+  );
 });
+
 
 
 socket.on("code-change", ({ roomId, code }) => {
@@ -259,15 +276,32 @@ socket.on("language-change", ({ roomId, language }) => {
 });
 
 
+  // socket.on("disconnect", () => {
+  //   for (const roomId in rooms) {
+  //     if (rooms[roomId][socket.id]) {
+  //       delete rooms[roomId][socket.id];
+  //       io.to(roomId).emit("room-users", Object.values(rooms[roomId]));
+  //     }
+  //   }
+  //   console.log("User disconnected:", socket.id);
+  // });
   socket.on("disconnect", () => {
-    for (const roomId in rooms) {
-      if (rooms[roomId][socket.id]) {
-        delete rooms[roomId][socket.id];
-        io.to(roomId).emit("room-users", Object.values(rooms[roomId]));
+  for (const roomId in rooms) {
+    for (const userId in rooms[roomId]) {
+      rooms[roomId][userId].sockets.delete(socket.id);
+
+      if (rooms[roomId][userId].sockets.size === 0) {
+        delete rooms[roomId][userId];
       }
+
+      io.to(roomId).emit(
+        "room-users",
+        Object.values(rooms[roomId]).map(u => u.name)
+      );
     }
-    console.log("User disconnected:", socket.id);
-  });
+  }
+});
+
 });
 
 app.get("/" , async (req,res)=>{

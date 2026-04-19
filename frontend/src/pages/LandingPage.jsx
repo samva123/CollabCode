@@ -26,6 +26,7 @@ const aiFeatures = [
   "Edge case test generation",
   "Big O complexity analysis",
 ];
+const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
 // ===========================================================
 //                       MAIN COMPONENT
@@ -64,7 +65,8 @@ export default function LandingPage() {
 
       const googleToken = response.credential;
 
-      const result = await fetch("https://collabcode-ctmq.onrender.com/auth/google", {
+      //const result = await fetch("http://localhost:8000/auth/google", {
+       const result = await fetch(`${BASE_URL}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: googleToken }),
@@ -74,7 +76,13 @@ export default function LandingPage() {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+
+      // 🔑 identity keys for socket
+      localStorage.setItem("email", data.user.email);
+      localStorage.setItem("username", data.user.name);
+
       navigate("/entrypage", { state: { user: data.user } });
+
     } catch (err) {
       console.error("Google login failed:", err);
     } finally {

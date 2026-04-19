@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 const socket = io(import.meta.env.VITE_BACKEND_URL);
-
+const BASE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
 function RoomPage({  isDark , setIsDark }) {
   // ------------------ STATES ------------------
@@ -110,12 +110,28 @@ function RoomPage({  isDark , setIsDark }) {
   //   // eslint-disable-next-line react-hooks/exhaustive-deps
   // }, [initialRoomId, initialName]);
 
-  useEffect(() => {
-  if (!joined && roomId && name.trim().length > 0) {
-    socket.emit("join-room", { roomId, name });
+//   useEffect(() => {
+//   if (!joined && roomId && name.trim().length > 0) {
+//     socket.emit("join-room", { roomId, name });
+//     setJoined(true);
+//   }
+// }, [roomId, name, joined]);
+
+useEffect(() => {
+  if (!joined && roomId) {
+    // socket.emit("join-room", { roomId, name: name || "Guest" });
+      socket.emit("join-room", {
+  roomId,
+  name,
+  userId: localStorage.getItem("email")
+});
+
+
+
     setJoined(true);
   }
-}, [roomId, name, joined]);
+}, [roomId, joined]);
+
 
 
 
@@ -160,10 +176,16 @@ useEffect(() => {
 const evaluateWithAI = async () => {
   const problemDescription = "Analyze the code and infer the problem automatically.";
   setOutput("AI evaluating...");
+  // try {
+
+  //   const res = await axios.post("http://localhost:8000/api/evaluate", {
+
+  //     language,
+  //     code,
+  //     problem: problemDescription
+  //   });
   try {
-
-    const res = await axios.post("http://localhost:8000/api/evaluate", {
-
+    const res = await axios.post(`${BASE_URL}/api/evaluate`, {
       language,
       code,
       problem: problemDescription
@@ -432,7 +454,7 @@ const uploadFile = () => {
     clearErrorDecorations();
 
     try {
-      const res = await axios.post("http://localhost:8000/api/execute", { language, code, stdin });
+      const res = await axios.post(`${BASE_URL}/api/execute`, { language, code, stdin });
       const outputText = res.data.stdout || res.data.stderr || "No output";
       setOutput(outputText);
 
